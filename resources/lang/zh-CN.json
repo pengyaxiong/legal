@@ -48,12 +48,12 @@
   "Sort order":"排序",
   "Id":"编号",
   "Category id":"分类名",
-  "Doctor id":"医生",
+  "Contact":"内容",
   "Title":"标题",
   "Author":"作者",
   "From":"来源",
   "Image":"缩略图",
-  "Description":"详情",
+  "Description":"简介",
   "Info":"简介 ",
   "See num":"浏览量 ",
   "Is show":"是否显示 ",
@@ -79,6 +79,7 @@
   "Host":"项目域名",
   "Des":"详情",
   "Value":"值",
+  "Message":"公告",
   "Image text":"图文",
   "Tel":"电话"
 }

@@ -19,6 +19,7 @@
  */
 
 use Encore\Admin\Form;
+use App\Admin\Extensions\Form\uEditor;
 
 Encore\Admin\Form::forget(['map', 'editor']);
 
