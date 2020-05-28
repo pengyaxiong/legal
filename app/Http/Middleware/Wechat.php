@@ -2,7 +2,7 @@
 
 namespace App\Http\Middleware;
 
-use App\User;
+use App\Models\Customer;
 use Closure;
 
 class Wechat
@@ -16,20 +16,21 @@ class Wechat
      */
     public function handle($request, Closure $next)
     {
-        if (!session('wechat.user')) {
+        //echo json_encode(session('wechat.customer'));exit();
+        if (!session('wechat.customer')) {
             $openid=$request->openid;
 
-            $user = User::where('openid', $openid)->first();
-            if ($user) {
-                $user->update([
+            $customer = Customer::where('openid', $openid)->first();
+            if ($customer) {
+                $customer->update([
                     'openid'=>$openid,
                 ]);
             } else {
-                $user = User::create([
+                $customer = Customer::create([
                     'openid'=>$openid,
                 ]);
             }
-            session(['wechat.user' => $user]);
+            session(['wechat.customer' => $customer]);
         }
 
         return $next($request);

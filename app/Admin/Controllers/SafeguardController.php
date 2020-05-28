@@ -29,6 +29,7 @@ class SafeguardController extends AdminController
         $grid->column('id', __('Id'));
         $grid->column('name', __('Name'));
         $grid->column('image', __('Image'))->image();
+        $grid->column('price', __('Price'))->editable();
         $grid->column('sort_order', __('Sort order'))->sortable()->editable()->help('按数字大小正序排序');
         $grid->column('description', __('Description'))->hide();
         $grid->column('created_at', __('Created at'));
@@ -50,6 +51,7 @@ class SafeguardController extends AdminController
         $show->field('id', __('Id'));
         $show->field('name', __('Name'));
         $show->field('image', __('Image'));
+        $show->field('price', __('Price'));
         $show->field('description', __('Description'));
         $show->field('created_at', __('Created at'));
         $show->field('updated_at', __('Updated at'));
@@ -68,6 +70,7 @@ class SafeguardController extends AdminController
 
         $form->text('name', __('Name'))->rules('required');
         $form->image('image', __('Image'))->rules('required|image');
+        $form->currency('price', __('Price'))->symbol('￥')->rules('required');
         $form->textarea('description', __('Description'))->rules('required');
         $form->number('sort_order', __('Sort order'))->default(99);
         return $form;

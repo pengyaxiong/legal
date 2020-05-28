@@ -26,9 +26,11 @@ Route::group([
     $router->resource('lighthouses', 'LighthouseController');
 
     //会员管理
+    $router->resource('customers', 'CustomerController');
 
-
+    //提现申请
+    $router->resource('withdraws', 'WithdrawController');
     //订单管理
-
+    $router->resource('orders', 'OrderController');
 
 });

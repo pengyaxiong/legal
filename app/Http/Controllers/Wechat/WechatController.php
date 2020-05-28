@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\Wechat;
 
 use App\Handlers\WechatConfigHandler;
-use App\User;
+use App\Models\Customer;
 use EasyWeChat\Kernel\Messages\News;
 use EasyWeChat\Kernel\Messages\NewsItem;
 use Illuminate\Http\Request;
@@ -157,21 +157,21 @@ class WechatController extends Controller
 
         $str = json_decode($this->httpGet($api), true);
 
-        if (!session('wechat.user')) {
+        if (!session('wechat.customer')) {
 
             $openid = $str['openid'];
 
-            $user = User::where('openid', $openid)->first();
+            $customer = Customer::where('openid', $openid)->first();
 
-            if ($user) {
-                $user->update([
+            if ($customer) {
+                $customer->update([
                     'openid' => $openid,
                     'headimgurl' => $request->headimgurl,
                     'nickname' => $request->nickname,
                 ]);
 
             } else {
-                $user = User::create([
+                $customer = User::create([
                     'openid' => $openid,
                     'headimgurl' => $request->headimgurl,
                     'nickname' => $request->nickname,
@@ -179,7 +179,7 @@ class WechatController extends Controller
 
             }
 
-            session(['wechat.user' => $user]);
+            session(['wechat.customer' => $customer]);
         }
 
         return $this->array($str, '授权成功');

@@ -73,3 +73,8 @@ The Laravel framework is open-sourced software licensed under the [MIT license](
 
 ### composer require stevenyangecho/laravel-u-editor
 - php artisan vendor:publish
+
+### composer require spatie/laravel-activitylog
+- php artisan vendor:publish --provider="Spatie\Activitylog\ActivitylogServiceProvider" --tag="migrations"
+- php artisan migrate 
+- php artisan vendor:publish --provider="Spatie\Activitylog\ActivitylogServiceProvider" --tag="config"
