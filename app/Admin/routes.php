@@ -32,5 +32,6 @@ Route::group([
     $router->resource('withdraws', 'WithdrawController');
     //订单管理
     $router->resource('orders', 'OrderController');
-
+    //咨询电话订单
+    $router->resource('mobile-orders', 'MobileOrderController');
 });

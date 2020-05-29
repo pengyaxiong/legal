@@ -13,12 +13,12 @@ use Illuminate\Http\Request;
 |
 */
 
-Route::middleware('auth:api')->get('/user', function (Request $request) {
-    return $request->user();
-});
+//Route::middleware('auth:api')->get('/user', function (Request $request) {
+//    return $request->user();
+//});
 
 //微信小程序 'middleware' => ['wechat.oauth','wechat'],
-Route::group(['namespace' => 'Wechat', 'prefix' => 'wechat', 'as' => 'wechat.'], function () {
+Route::group(['middleware' => [],'namespace' => 'Wechat', 'prefix' => 'wechat', 'as' => 'wechat.'], function () {
 
     //授权
     Route::post('/auth', 'WechatController@auth');
@@ -29,6 +29,7 @@ Route::group(['namespace' => 'Wechat', 'prefix' => 'wechat', 'as' => 'wechat.'],
     Route::get('safeguard/{id}', 'IndexController@safeguard');
     //法律法规&维权指南&服务范围
     Route::get('categories', 'IndexController@categories');
+    Route::get('articles', 'IndexController@articles');
     Route::get('article/{id}', 'IndexController@article');
     //曝光台
     Route::get('lighthouses', 'IndexController@lighthouses');
@@ -36,6 +37,8 @@ Route::group(['namespace' => 'Wechat', 'prefix' => 'wechat', 'as' => 'wechat.'],
 
     //用户信息
     Route::get('customer', 'IndexController@customer');
+    //我的团队
+    Route::get('group', 'IndexController@group');
 
     //提现记录
     Route::get('withdraw', 'IndexController@withdraw');
@@ -48,6 +51,18 @@ Route::group(['namespace' => 'Wechat', 'prefix' => 'wechat', 'as' => 'wechat.'],
 
     //我的订单
     Route::get('order', 'IndexController@order');
+    //付款
+    Route::post('pay', 'IndexController@pay');
+    //取消订单
+    Route::post('refund/{id}', 'IndexController@refund');
+
+    //付款咨询
+    Route::post('pay_mobile', 'IndexController@pay_mobile');
+
+
+    //上传图片
+    Route::post('upload_img', 'IndexController@upload_img');
+
 
 
     //微信公众号接口
@@ -56,5 +71,6 @@ Route::group(['namespace' => 'Wechat', 'prefix' => 'wechat', 'as' => 'wechat.'],
 
     //付款回调
     Route::any('paid', 'IndexController@paid');
+    Route::any('paid_mobile', 'IndexController@paid_mobile');
 
 });

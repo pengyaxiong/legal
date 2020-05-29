@@ -32,4 +32,9 @@ class Customer extends Model
     {
         return $this->hasMany(Withdraw::class);
     }
+
+    public function mobile_orders()
+    {
+        return $this->hasMany(MobileOrder::class);
+    }
 }

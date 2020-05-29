@@ -2,7 +2,9 @@
 
 namespace App\Admin\Controllers;
 
+use App\Models\Customer;
 use App\Models\Order;
+use App\Models\Safeguard;
 use Encore\Admin\Controllers\AdminController;
 use Encore\Admin\Form;
 use Encore\Admin\Grid;
@@ -28,21 +30,49 @@ class OrderController extends AdminController
 
         $grid->column('id', __('Id'));
         $grid->column('order_sn', __('Order sn'));
-        $grid->column('customer_id', __('Customer id'));
-        $grid->column('safeguard_id', __('Safeguard id'));
-        $grid->column('status', __('Status'));
-        $grid->column('pay_type', __('Pay type'));
+        $grid->column('customer.nickname', __('Customer id'));
+        $grid->column('safeguard.name', __('Safeguard id'));
+
+        $grid->column('status', __('Status'))->replace([
+            1 => '待支付',
+            2 => '已完成',
+            3 => '已取消',
+        ])->label([
+            1 => 'default',
+            2 => 'success',
+            3 => 'warning',
+        ]);
+        $grid->column('pay_type', __('Pay type'))->using([
+            1 => '微信支付',
+        ], '未知')->dot([
+            1 => 'primary',
+        ], 'warning');
+
         $grid->column('total_price', __('Total price'));
-        $grid->column('pay_time', __('Pay time'));
-        $grid->column('finish_time', __('Finish time'));
-        $grid->column('created_at', __('Created at'));
-        $grid->column('updated_at', __('Updated at'));
+
+        $grid->column('solution', __('Solution'))->downloadable();
+
+        $grid->column('pay_time', __('Pay time'))->hide();
+        $grid->column('finish_time', __('Finish time'))->hide();
+        $grid->column('created_at', __('Created at'))->hide();
+        $grid->column('updated_at', __('Updated at'))->hide();
+
+        $grid->filter(function ($filter) {
+            $filter->equal('order_sn', __('Order sn'));
+            $status_text = [
+                1 => '待支付',
+                2 => '已完成',
+                3 => '已取消',
+            ];
+            $filter->equal('status', __('Status'))->select($status_text);
+            $filter->between('created_at', __('Created at'))->date();
+        });
 
         //禁用创建按钮
-        $grid->disableCreateButton();
+            $grid->disableCreateButton();
         $grid->actions(function ($actions) {
             $actions->disableView();
-            $actions->disableEdit();
+           // $actions->disableEdit();
             $actions->disableDelete();
         });
         return $grid;
@@ -83,11 +113,29 @@ class OrderController extends AdminController
         $form = new Form(new Order());
 
         $form->text('order_sn', __('Order sn'));
-        $form->number('customer_id', __('Customer id'));
-        $form->number('safeguard_id', __('Safeguard id'));
-        $form->switch('status', __('Status'))->default(1);
-        $form->switch('pay_type', __('Pay type'))->default(1);
-        $form->decimal('total_price', __('Total price'));
+
+        $customers = Customer::all()->toArray();
+        $select_array = array_column($customers, 'nickname', 'id');
+        $form->select('customer_id', __('Customer id'))->options($select_array)->rules('required');
+
+        $safeguards = Safeguard::all()->toArray();
+        $select_array = array_column($safeguards, 'name', 'id');
+        $form->select('safeguard_id', __('Safeguard id'))->options($select_array)->rules('required');
+
+        $form->select('status', __('Status'))->options([1 => '待支付', 2 => '已完成', 3 => '已取消'])->default(1);
+
+        $states = [
+            'on' => ['value' => 1, 'text' => '微信支付', 'color' => 'success'],
+            'off' => ['value' => 0, 'text' => '其他', 'color' => 'danger'],
+        ];
+
+        $form->switch('pay_type', __('Pay type'))->states($states)->default(1);
+
+        $form->decimal('total_price', __('Total price'))->rules('required');
+
+        // 增加一个下载按钮，可点击下载
+        $form->file('solution', __('Solution'))->downloadable();
+
         $form->datetime('pay_time', __('Pay time'))->default(date('Y-m-d H:i:s'));
         $form->datetime('finish_time', __('Finish time'))->default(date('Y-m-d H:i:s'));
 
