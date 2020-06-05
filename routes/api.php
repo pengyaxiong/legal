@@ -33,6 +33,7 @@ Route::group(['middleware' => [],'namespace' => 'Wechat', 'prefix' => 'wechat', 
     Route::get('article/{id}', 'IndexController@article');
     //曝光台
     Route::get('lighthouses', 'IndexController@lighthouses');
+
     Route::post('lighthouse', 'IndexController@lighthouse');
 
     //用户信息

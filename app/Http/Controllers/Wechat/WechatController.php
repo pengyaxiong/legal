@@ -8,6 +8,7 @@ use EasyWeChat\Kernel\Messages\News;
 use EasyWeChat\Kernel\Messages\NewsItem;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
+use SimpleSoftwareIO\QrCode\Facades\QrCode;
 
 class WechatController extends Controller
 {
@@ -149,9 +150,9 @@ class WechatController extends Controller
         //声明CODE，获取小程序传过来的CODE
         $code = $request->code;
         //配置appid
-        $appid = $mini->app_id;
+        $appid = $mini['app_id'];
         //配置appscret
-        $secret = $mini->secret;
+        $secret = $mini['secret'];
         //api接口
         $api = "https://api.weixin.qq.com/sns/jscode2session?appid={$appid}&secret={$secret}&js_code={$code}&grant_type=authorization_code";
 
@@ -171,8 +172,16 @@ class WechatController extends Controller
                 ]);
 
             } else {
-                $customer = User::create([
+                $invitation_code=substr($code,0,4).substr($openid,0,2);
+
+                $register_url = 'pages/AuthLogin/AuthLogin?openid' . $openid;
+
+                QrCode::encoding('UTF-8')->format('png')->size(500)->generate($register_url, storage_path('qrcodes/' . $openid . '.png'));
+
+                $customer = Customer::create([
                     'openid' => $openid,
+                    'code' => $invitation_code,
+                    'code_image' => 'https://' . $_SERVER['SERVER_NAME'] . '/storage/qrcodes/' . $openid. '.png',
                     'headimgurl' => $request->headimgurl,
                     'nickname' => $request->nickname,
                 ]);

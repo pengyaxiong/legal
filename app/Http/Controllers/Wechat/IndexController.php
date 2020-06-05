@@ -23,6 +23,10 @@ class IndexController extends Controller
 {
     protected $wechat;
 
+  public function __construct(WechatConfigHandler $wechat)
+    {
+        $this->wechat = $wechat;
+    }
     //获取姓氏
     public function getXingList()
     {
@@ -82,10 +86,6 @@ class IndexController extends Controller
         return $safeguards;
     }
 
-    public function __construct(WechatConfigHandler $wechat)
-    {
-        $this->wechat = $wechat;
-    }
 
     public function index()
     {
@@ -122,15 +122,34 @@ class IndexController extends Controller
                 $info[$i]['time']=$Time;
             }
         }
+		
+		$categories = Category::orderby('sort_order')->get()->toArray();
 
-        return $this->array(['config' => $configs, 'frauds' => $frauds, 'info' => $info]);
+		$app = $this->wechat->pay();
+		
+		$jsApiList = ['chooseWXPay'];//支付
+		
+		$jssdk_json = $app->jssdk->buildConfig($jsApiList, false, false, true);
+
+        $jssdk_config = json_decode($jssdk_json, true);
+		
+        return $this->array(['pay_config'=>$jssdk_json,'config' => $configs, 'frauds' => $frauds, 'info' => $info, 'categories' => $categories]);
     }
 
     public function safeguards()
     {
         $safeguards = Safeguard::orderby('sort_order')->get()->toArray();
+		
+		
+		$app = $this->wechat->pay();
+		
+		$jsApiList = ['chooseWXPay'];//支付
+		
+		$jssdk_json = $app->jssdk->buildConfig($jsApiList, false, false, true);
 
-        return $this->array($safeguards);
+        $jssdk_config = json_decode($jssdk_json, true);
+		  
+        return $this->array(['pay_config'=>$jssdk_json,'safeguards'=>$safeguards]);
     }
 
     public function safeguard($id)
@@ -210,9 +229,13 @@ class IndexController extends Controller
         return $this->null();
     }
 
-    public function customer()
+    public function customer(Request $request)
     {
-        $customer_id = session('wechat.customer.id');
+		
+		 $openid=$request->openid;
+		 $customer = Customer::where('openid', $openid)->first();
+		
+        $customer_id = $customer->id;
 
         $customer = Customer::with('children')->find($customer_id)->toArray();
 
@@ -221,7 +244,10 @@ class IndexController extends Controller
 
     public function group(Request $request)
     {
-        $customer_id = session('wechat.customer.id');
+		 $openid=$request->openid;
+		 $customer = Customer::where('openid', $openid)->first();
+		
+        $customer_id = $customer->id;
 
         $customers = Customer::where('parent_id', $customer_id)->paginate($request->total);
 
@@ -235,6 +261,10 @@ class IndexController extends Controller
 
     public function do_withdraw(Request $request)
     {
+		
+		 $openid=$request->openid;
+		 $customer = Customer::where('openid', $openid)->first();
+		
         try {
             $messages = [
                 'money.required' => '提现金额不能为空!',
@@ -251,9 +281,14 @@ class IndexController extends Controller
                 $this->error(500, $error);
             }
 
-            $request->offsetSet('customer_id', session('wechat.customer.id'));
+            // $request->offsetSet('customer_id', $customer->id);
 
-            Withdraw::create($request->all());
+
+            Withdraw::create([
+                'customer_id'=>$customer->id,
+                'money'=>$request->money,
+                'image'=>$request->image,
+            ]);
 
         } catch (\Exception $exception) {
             Log::error($exception->getMessage());
@@ -266,7 +301,12 @@ class IndexController extends Controller
 
     public function withdraw(Request $request)
     {
-        $customer_id = session('wechat.customer.id');
+		
+		 $openid=$request->openid;
+		 $customer = Customer::where('openid', $openid)->first();
+	
+		
+        $customer_id = $customer->id;
 
         $list = Activity::where(['subject_id' => $customer_id, 'log_name' => 'withdraw'])->paginate($request->total);
 
@@ -281,7 +321,12 @@ class IndexController extends Controller
 
     public function money(Request $request)
     {
-        $customer_id = session('wechat.customer.id');
+		
+		 $openid=$request->openid;
+		 $customer = Customer::where('openid', $openid)->first();
+		
+		
+        $customer_id = $customer->id;
 
         $list = Activity::where(['subject_id' => $customer_id, 'log_name' => 'money'])->paginate($request->total);
         if (!empty($list)) {
@@ -300,8 +345,13 @@ class IndexController extends Controller
 
     public function code(Request $request)
     {
+		
+		 $openid=$request->openid;
+		 $customer = Customer::where('openid', $openid)->first();
+		
+		
         $code = $request->code;
-        $customer_id = session('wechat.customer.id');
+        $customer_id = $customer->id;
         $customer = Customer::find($customer_id);
 
         $parent = Customer::where('code', $code)->first();
@@ -314,12 +364,29 @@ class IndexController extends Controller
         }
     }
 
+    public function is_mobile(Request $request)
+    {
+        $openid=$request->openid;
+        $customer = Customer::where('openid', $openid)->first();
+        $has_pay=MobileOrder::where(['customer_id'=> $customer->id,'status'=>1])->first();
+        if(!empty($has_pay)){
+            return true;
+        }else{
+            return false;
+        }
+    }
+
     public function order(Request $request)
     {
 
+		
+		 $openid=$request->openid;
+		 $customer = Customer::where('openid', $openid)->first();
+		
+		
         //多条件查找
-        $where = function ($query) use ($request) {
-            $query->where('customer_id', session('wechat.customer.id'));
+        $where = function ($query) use ($request,$customer) {
+            $query->where('customer_id', $customer->id);
 
             switch ($request->status) {
                 case '':
@@ -350,18 +417,23 @@ class IndexController extends Controller
 
     public function pay(Request $request)
     {
-        if (!session('wechat.customer')) {
-            $openid = $request->openid;
-            $customer = Customer::where('openid', $openid)->first();
-            session(['wechat.customer' => $customer]);
-        }
+       
+		 $openid=$request->openid;
+		 $customer = Customer::where('openid', $openid)->first();
+		
+		$name=$request->name;
+		$tel=$request->tel;
+		$platform=$request->platform;
+		$money=$request->money;
+		$pass=$request->pass;
+		
         $safeguard_id = $request->safeguard_id;
-        $order_sn = date('YmdHms', time()) . '_' . session('wechat.customer.id');
+        $order_sn = date('YmdHms', time()) . '_' . $customer->id;
         $safeguard = Safeguard::find($safeguard_id);
 
         $app = $this->wechat->pay(1);
         $title = $safeguard->name;
-        $total_price = $safeguard->total_price;
+        $total_price = $safeguard->price;
 
 
         $order_config = [
@@ -371,7 +443,7 @@ class IndexController extends Controller
             //'spbill_create_ip' => '', // 可选，如不传该参数，SDK 将会自动获取相应 IP 地址
             'notify_url' => 'http://' . $_SERVER['HTTP_HOST'] . '/api/wechat/paid', // 支付结果通知网址，如果不设置则会使用配置里的默认地址
             'trade_type' => 'JSAPI', // 请对应换成你的支付方式对应的值类型
-            'openid' => session('wechat.customer.openid'),
+            'openid' => $customer->openid,
         ];
 
         //生成预支付生成订单
@@ -381,10 +453,15 @@ class IndexController extends Controller
         if ($result['return_code'] == 'SUCCESS' && $result['result_code'] == 'SUCCESS') {
 
             $order = Order::create([
-                'customer_id' => session('wechat.customer.id'),
+                'customer_id' => $customer->id,
                 'order_sn' => $order_sn,
                 'safeguard_id' => $safeguard_id,
                 'total_price' => $total_price,
+				'name' => $name,
+				'tel' => $tel,
+				'platform' => $platform,
+				'money' => $money,
+				'pass' => $pass,
             ]);
 
 
@@ -412,6 +489,8 @@ class IndexController extends Controller
                 // 用户是否支付成功
                 if (array_get($message, 'result_code') === 'SUCCESS') {
                     $order->pay_time = date('Y-m-d H:i:s', time()); // 更新支付时间为当前时间
+					$order->status = 2;
+					$order->save();
 
                     $customer_id = $order->customer_id;
                     $customer = Customer::find($customer_id);
@@ -426,6 +505,7 @@ class IndexController extends Controller
                         $parent = Customer::find($customer->parent_id);
                         $money = $order->total_price * config('rate');
                         $parent->money += $money;
+						$parent->save();
                         activity()->inLog('money')
                             ->performedOn($parent)
                             ->causedBy($customer)
@@ -447,12 +527,11 @@ class IndexController extends Controller
 
     public function pay_mobile(Request $request)
     {
-        if (!session('wechat.customer')) {
-            $openid = $request->openid;
-            $customer = Customer::where('openid', $openid)->first();
-            session(['wechat.customer' => $customer]);
-        }
-        $order_sn = date('YmdHms', time()) . '_' . session('wechat.customer.id');
+        
+		 $openid=$request->openid;
+		 $customer = Customer::where('openid', $openid)->first();
+
+        $order_sn = date('YmdHms', time()) . '_' . $customer->id;
 
         $configs = Config::all()->toArray();
 
@@ -467,7 +546,7 @@ class IndexController extends Controller
             //'spbill_create_ip' => '', // 可选，如不传该参数，SDK 将会自动获取相应 IP 地址
             'notify_url' => 'http://' . $_SERVER['HTTP_HOST'] . '/api/wechat/paid_mobile', // 支付结果通知网址，如果不设置则会使用配置里的默认地址
             'trade_type' => 'JSAPI', // 请对应换成你的支付方式对应的值类型
-            'openid' => session('wechat.customer.openid'),
+            'openid' => $customer->openid,
         ];
         //生成预支付生成订单
         $result = $app->order->unify($order_config);
@@ -475,7 +554,7 @@ class IndexController extends Controller
         if ($result['return_code'] == 'SUCCESS' && $result['result_code'] == 'SUCCESS') {
 
             MobileOrder::create([
-                'customer_id' => session('wechat.customer.id'),
+                'customer_id' => $customer->id,
                 'order_sn' => $order_sn,
                 'total_price' => $total_price,
             ]);
@@ -502,6 +581,7 @@ class IndexController extends Controller
                 // 用户是否支付成功
                 if (array_get($message, 'result_code') === 'SUCCESS') {
                     $order->pay_time = date('Y-m-d H:i:s', time()); // 更新支付时间为当前时间
+					 $order->save();
 
                     $customer_id = $order->customer_id;
                     $customer = Customer::find($customer_id);

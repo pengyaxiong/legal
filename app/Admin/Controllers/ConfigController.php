@@ -102,7 +102,7 @@ class ConfigController extends AdminController
 
         $form->image('image', __('首页横幅'))->rules('required|image');
 
-        $form->mobile('phone', __('售后电话'))->rules('required');
+        $form->text('phone', __('售后电话'))->rules('required');
 
         $form->mobile('server_phone', __('咨询电话'))->rules('required');
         $form->currency('server_price', __('咨询价格'))->symbol('￥')->rules('required');
@@ -110,6 +110,8 @@ class ConfigController extends AdminController
 
         $form->image('us_image', __('关于我们图片'))->rules('required|image');
         $form->ueditor('us_description', __('关于我们内容'))->rules('required');
+		
+		$form->ueditor('agree', __('协议'))->rules('required');
 
         return $form;
     }

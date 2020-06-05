@@ -133,6 +133,12 @@ class OrderController extends AdminController
 
         $form->decimal('total_price', __('Total price'))->rules('required');
 
+		$form->text('name', __('称呼'));
+		$form->text('tel', __('手机号'));
+		$form->text('platform', __('被骗平台'));
+		$form->text('money', __('受骗金额'));
+		$form->textarea('pass', __('受骗经过'));
+		
         // 增加一个下载按钮，可点击下载
         $form->file('solution', __('Solution'))->downloadable();
 

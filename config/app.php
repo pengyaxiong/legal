@@ -163,9 +163,10 @@ return [
 
         Spatie\Activitylog\ActivitylogServiceProvider::class,
 
-        Stevenyangecho\UEditor\UEditorServiceProvider::class
+        Stevenyangecho\UEditor\UEditorServiceProvider::class,
 
-
+        //二维码
+        SimpleSoftwareIO\QrCode\QrCodeServiceProvider::class
     ],
 
     /*
