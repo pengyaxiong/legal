@@ -468,6 +468,7 @@ class IndexController extends Controller
             $prepayId = $result['prepay_id'];
 
             $config = $app->jssdk->sdkConfig($prepayId);
+
             return response()->json($config);
         }
     }
